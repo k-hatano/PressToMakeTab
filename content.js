@@ -43,10 +43,10 @@ function onWindowLoaded(event) {
 				|| anchors[i].onmouseup != undefined || anchors[i].onmousemove != undefined) {
 			continue;
 		}
-		anchors[i].addEventListener("click", onClickOnAnchor);
-		anchors[i].addEventListener("mousedown", onMouseDownOnAnchor);
-		anchors[i].addEventListener("mouseup", onMouseUpOnAnchor);
-		anchors[i].addEventListener("mousemove", onMouseMoveOnAnchor);
+		anchors[i].addEventListener("click", onClickOnAnchor, {capture: true});
+		anchors[i].addEventListener("mousedown", onMouseDownOnAnchor, {capture: true});
+		anchors[i].addEventListener("mouseup", onMouseUpOnAnchor, {capture: true});
+		anchors[i].addEventListener("mousemove", onMouseMoveOnAnchor, {capture: true});
 	}
 }
 
