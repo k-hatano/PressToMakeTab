@@ -1,0 +1,18 @@
+
+.options {
+	padding: 4px 8px;
+	font-size: medium;
+}
+
+.options p {
+	margin: 0px 0px;
+}
+
+.options #duration {
+	width: 200px;
+}
+
+.options #exception_sites {
+	width: 320px;
+	height: 120px;
+}
