@@ -6,6 +6,8 @@ var pressedAnchor = undefined;
 var pressedTimeout = undefined;
 var preventAnchor = undefined;
 
+var hoveringAnchor = undefined;
+
 var duration = 500;
 var exceptionSites = "";
 var activate = false;
@@ -44,6 +46,7 @@ function onWindowLoaded(loadedEvent) {
 		anchors[i].addEventListener("mouseup", onMouseUpOnAnchor, {capture: true});
 		anchors[i].addEventListener("mousemove", onMouseMoveOnAnchor, {capture: true});
 		anchors[i].addEventListener("mouseout", onMouseOutOnAnchor, {capture: true});
+		anchors[i].addEventListener("mouseout", onMouseLeaveOnAnchor, {capture: true});
 	}
 }
 
@@ -51,7 +54,7 @@ function onClickOnAnchor(clickEvent) {
 	if (clickEvent.button != 0 && clickEvent.button != 2) {
 		return true;
 	}
-	if (clickEvent.target == preventAnchor) {
+	if (clickEvent.target.isEqualNode(preventAnchor)) {
 		preventAnchor = undefined;
 		clickEvent.preventDefault();
 		return false;
@@ -64,6 +67,9 @@ function onMouseDownOnAnchor(downEvent) {
 		return true;
 	}
 	if (pressedTimeout != undefined) {
+		return false;
+	}
+	if (hoveringAnchor == downEvent.target) {
 		return false;
 	}
 	var downingEvent = downEvent;
@@ -80,6 +86,7 @@ function onMouseDownOnAnchor(downEvent) {
 		currentY = downingEvent.clientY;
 
 		pressedAnchor = downingEvent.target;
+		hoveringAnchor = downingEvent.target;
 		pressedTimeout = setTimeout(onTicksTakenOnPressedAnchor, duration);
 	});
 	return false;
@@ -95,9 +102,16 @@ function onMouseMoveOnAnchor(moveEvent) {
 }
 
 function onMouseOutOnAnchor(outEvent) {
-	if (outEvent.button != 0 && outEvent.button != 2) {
-		return true;
+	hoveringAnchor = undefined;
+	pressedAnchor = undefined;
+	if (pressedTimeout != undefined) {
+		clearTimeout(pressedTimeout);
+		pressedTimeout = undefined;
 	}
+}
+
+function onMouseLeaveOnAnchor(outEvent) {
+	hoveringAnchor = undefined;
 	pressedAnchor = undefined;
 	if (pressedTimeout != undefined) {
 		clearTimeout(pressedTimeout);
@@ -121,11 +135,11 @@ function onMouseUpOnAnchor(upEvent) {
 
 function onTicksTakenOnPressedAnchor() {
 	if (pressedAnchor != undefined) {
-		preventAnchor = pressedAnchor;
 		var distance = getDistance(startX, startY, currentX, currentY);
-		if (distance < 6) {
+		if (distance < 8) {
+			preventAnchor = pressedAnchor;
 			chrome.runtime.sendMessage({type: "newTab", url: extractAnchor(pressedAnchor).href, activate: activate}, function(){
-				
+				pressedTimeout = undefined;
 			});
 		}
 	}
@@ -137,6 +151,7 @@ function resetAllVariables() {
 	pressedAnchor = undefined;
 	pressedTimeout = undefined;
 	preventAnchor = undefined;
+	hoveringAnchor = undefined;
 }
 
 function extractAnchor(anElement) {
