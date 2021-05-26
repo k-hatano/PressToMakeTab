@@ -4,9 +4,10 @@ var mutationObserver = undefined;
 
 var pressedAnchor = undefined;
 var pressedTimeout = undefined;
-var preventAnchor = undefined;
+var pressedTime = 0;
 
-var hoveringAnchor = undefined;
+var performedAnchor = undefined; // タブ作成を行ったアンカー
+var hoveringAnchor = undefined; // クリック以降マウスポインタが入ったままのアンカー
 
 var duration = 500;
 var exceptionSites = "";
@@ -54,8 +55,8 @@ function onClickOnAnchor(clickEvent) {
 	if (clickEvent.button != 0 && clickEvent.button != 2) {
 		return true;
 	}
-	if (clickEvent.target.isEqualNode(preventAnchor)) {
-		preventAnchor = undefined;
+	if (clickEvent.target.isEqualNode(performedAnchor)) {
+		performedAnchor = undefined;
 		clickEvent.preventDefault();
 		return false;
 	}
@@ -87,6 +88,7 @@ function onMouseDownOnAnchor(downEvent) {
 
 		pressedAnchor = downingEvent.target;
 		hoveringAnchor = downingEvent.target;
+		pressedTime = new Date();
 		pressedTimeout = setTimeout(onTicksTakenOnPressedAnchor, duration);
 	});
 	return false;
@@ -127,7 +129,7 @@ function onMouseUpOnAnchor(upEvent) {
 	if (pressedTimeout != undefined) {
 		clearTimeout(pressedTimeout);
 		pressedTimeout = undefined;
-		preventAnchor = undefined;
+		performedAnchor = undefined;
 		upEvent.preventDefault();
 		return false;
 	}
@@ -135,12 +137,16 @@ function onMouseUpOnAnchor(upEvent) {
 
 function onTicksTakenOnPressedAnchor() {
 	if (pressedAnchor != undefined) {
-		var distance = getDistance(startX, startY, currentX, currentY);
-		if (distance < 8) {
-			preventAnchor = pressedAnchor;
-			chrome.runtime.sendMessage({type: "newTab", url: extractAnchor(pressedAnchor).href, activate: activate}, function(){
-				pressedTimeout = undefined;
-			});
+		var now = new Date();
+		var latency = now - pressedTime;
+		if (latency < duration * 1.5) { // durationの1.5倍以上掛かっていたら処理落ちとみなす
+			var distance = getDistance(startX, startY, currentX, currentY);
+			if (distance < 5) {
+				performedAnchor = pressedAnchor;
+				chrome.runtime.sendMessage({type: "newTab", url: extractAnchor(pressedAnchor).href, activate: activate}, function(){
+					pressedTimeout = undefined;
+				});
+			}
 		}
 	}
 
@@ -150,7 +156,7 @@ function onTicksTakenOnPressedAnchor() {
 function resetAllVariables() {
 	pressedAnchor = undefined;
 	pressedTimeout = undefined;
-	preventAnchor = undefined;
+	performedAnchor = undefined;
 	hoveringAnchor = undefined;
 }
 
